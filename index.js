@@ -20,7 +20,7 @@ client.on('message', msg => {
             return;
         }
         console.log("Sending Image of", msg.author.username);
-        const attachment=new Attachment(img, 'test.jpg');
+        const attachment=new Attachment('./test.jpg');
         msg.channel.send("aaaaah",attachment);
         console.log("Done Image of", msg.author.username);
     });
@@ -30,15 +30,19 @@ client.on('message', msg => {
 client.login(process.env.DISCORD_TOKEN);
 
 function get_image(img_path, callback) {
+  console.log("getting image");
   Jimp.read(img_path).then(img => {
     img
       .resize(256, 256) // resize
       .quality(100) // set JPEG quality
-      .invert();
+      .invert()
+      .write('test.jpg',() => {callback(null, "a");});
+/*
     img.getBufferAsync(Jimp.MIME_JPEG, buffer => {
       console.log("call back");
       callback(null, buffer);
     });
+*/
   }).catch(err => {
     callback(err);
   });
