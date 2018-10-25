@@ -75,7 +75,7 @@ function show_monster(msg) {
     .setDescription("")
     .setImage("attachment://mob.jpg")
     .addField("HP ("+hp_text+"):", hp_details, true);
-  msg.channel.send({ embed, files: [{ attachment: './tmp/mob.jpg', name: 'mob.png' }] });
+  msg.channel.send({ embed, files: [{ attachment: './tmp/mob.jpg', name: 'mob.jpg' }] });
   //const attachment=new Attachment('./tmp/mob.jpg');
   //msg.channel.send(monster.name, attachment);
   msg.delete();
