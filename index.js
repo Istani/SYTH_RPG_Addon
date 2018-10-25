@@ -51,6 +51,21 @@ client.on('message', msg => {
       show_monster(msg);
     }
   }
+  if (msg.content === "Attack") {
+    if (monster.hp >0) {
+      var tmp_dmg=1;
+      monster.hp-=tmp_dmg;
+      if (monster.hp<0) {
+        tmp_dmg+=monster_hp;
+        monster.hp=0;
+      }
+      save_monster();
+      msg.channel.send(msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
+    } else {
+      msg.reply("kein Monster in Sicht");
+    }
+    msg.delete();
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
