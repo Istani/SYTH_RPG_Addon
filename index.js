@@ -5,44 +5,77 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const Jimp = require('jimp');
 
+var monster={};
+function load_monster() {
+  try {
+    monster=require("./tmp/mob.json");
+  } catch(error) {
+    console.error("Monster", "Couldn't load Monster!");
+    monster={};
+    //save_monster(); - Can't save empty monster
+  }
+}
+load_monster();
+function save_monster() {
+  const fs = require("fs");
+  var data = JSON.stringify(monster);
+  fs.writeFileSync("./tmp/mob.json",data);
+  load_monster();
+}
+
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
 client.on('message', msg => {
-  if (msg.content === 'pic') {
-    console.log("Create Image of", msg.author.username, msg.author.avatarURL);
-    async.parallel([
-      function (callback) {get_image(msg.author.avatarURL, callback)}
-    ], function (err, img) {
+  if (msg.content === 'Spawn') {
+    // Check Role
+    // Check for Monster Already Spawned
+    if (monster.hp === undefined || monster.hp<1) {
+      // No Monster Alive - Generate Monster
+      console.log("Generate new Monster!");
+      monster.name="Dark "+msg.author.username;
+      monster.hp_max = 1;
+      monster.hp = 0;
+      async.parallel([
+        function (callback) {get_image(msg.author.avatarURL, callback)},
+      ], function (err) {
         if (err) {
             console.error("ERROR", err);
             return;
         }
-        console.log("Sending Image of", msg.author.username);
-        const attachment=new Attachment('./test.jpg');
-        msg.channel.send("aaaaah",attachment);
-        console.log("Done Image of", msg.author.username);
-    });
+        save_monster();
+        show_monster(msg);
+      });
+    } else {
+      show_monster(msg);
+    }
   }
 });
 
 client.login(process.env.DISCORD_TOKEN);
 
+function show_monster(msg) {
+  var hp_text = monster.hp + "/" + monster.hp_max;
+  var hp_details="██░░░░░░░ 23%";
+  const embed = new Discord.RichEmbed()
+    .setTitle(monster.name)
+    .setDescription("")
+    .setImage("attachment://mob.jpg")
+    .addField("HP ("+hp_text+"):", hp_details, true);
+  msg.channel.send({ embed, files: [{ attachment: './tmp/mob.jpg', name: 'mob.png' }] });
+  //const attachment=new Attachment('./tmp/mob.jpg');
+  //msg.channel.send(monster.name, attachment);
+  msg.delete();
+}
+
 function get_image(img_path, callback) {
-  console.log("getting image");
   Jimp.read(img_path).then(img => {
     img
       .resize(256, 256) // resize
       .quality(100) // set JPEG quality
       .invert()
-      .write('test.jpg',() => {callback(null, "a");});
-/*
-    img.getBufferAsync(Jimp.MIME_JPEG, buffer => {
-      console.log("call back");
-      callback(null, buffer);
-    });
-*/
+      .write('./tmp/mob.jpg',() => {callback();});
   }).catch(err => {
     callback(err);
   });
