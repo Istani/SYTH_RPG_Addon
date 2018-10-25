@@ -57,7 +57,19 @@ client.login(process.env.DISCORD_TOKEN);
 
 function show_monster(msg) {
   var hp_text = monster.hp + "/" + monster.hp_max;
-  var hp_details="██░░░░░░░ 23%";
+  var hp_details=""; //██░░░░░░░ 23%"
+  var hp_prozent=(monster.hp*100)/monster.hp_max;
+  var step_prozent=5;
+  var tmp_prozent=0;
+  while (tmp_prozent<100) {
+    tmp_prozent+=step_prozent;
+    if(tmp_prozent<=hp_prozent) {
+      hp_details+="█";
+    } else {
+      hp_details+="░";
+    }
+  }
+  hp_details+=" "+parseInt(hp_prozent)+"%";
   const embed = new Discord.RichEmbed()
     .setTitle(monster.name)
     .setDescription("")
