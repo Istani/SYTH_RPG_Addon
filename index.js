@@ -36,7 +36,7 @@ client.on('message', msg => {
       console.log("Generate new Monster!");
       monster.name="Dark "+msg.author.username;
       monster.hp_max = 1;
-      monster.hp = 0;
+      monster.hp = monster.hp_max;
       async.parallel([
         function (callback) {get_image(msg.author.avatarURL, callback)},
       ], function (err) {
@@ -60,9 +60,9 @@ client.on('message', msg => {
         monster.hp=0;
       }
       save_monster();
-      msg.channel.send(msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
+      msg.channel.send("⚔ " + msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
     } else {
-      msg.reply("kein Monster in Sicht");
+      msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
     }
     msg.delete();
   }
@@ -89,7 +89,7 @@ function show_monster(msg) {
     .setTitle(monster.name)
     .setDescription("")
     .setImage("attachment://mob.jpg")
-    .addField("HP ("+hp_text+"):", hp_details, true);
+    .addField("❤ HP ("+hp_text+"):", hp_details, true);
   msg.channel.send({ embed, files: [{ attachment: './tmp/mob.jpg', name: 'mob.jpg' }] });
   //const attachment=new Attachment('./tmp/mob.jpg');
   //msg.channel.send(monster.name, attachment);
