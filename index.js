@@ -5,6 +5,15 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const Jimp = require('jimp');
 
+// TEST 
+/*
+const sponsors = require("./data_models/sponsors.js");
+var data_sponsors = {};
+sponsors.show(data_sponsors, () => { }, {});
+setTimeout(() => { console.log(data_sponsors) }, 10000);
+*/
+// TEST Ende
+
 var monster={};
 function load_monster() {
   try {
@@ -73,7 +82,7 @@ client.login(process.env.DISCORD_TOKEN);
 function show_monster(msg) {
   var hp_text = monster.hp + "/" + monster.hp_max;
   var hp_details=""; //██░░░░░░░ 23%"
-  var hp_prozent=(monster.hp*100)/monster.hp_max;
+  var hp_prozent=parseInt((monster.hp*100)/monster.hp_max);
   var step_prozent=5;
   var tmp_prozent=0;
   while (tmp_prozent<100) {
@@ -84,7 +93,7 @@ function show_monster(msg) {
       hp_details+="░";
     }
   }
-  hp_details+=" "+parseInt(hp_prozent)+"%";
+  hp_details+=" "+hp_prozent+"%";
   const embed = new Discord.RichEmbed()
     .setTitle(monster.name)
     .setDescription("")
