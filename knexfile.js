@@ -1,4 +1,12 @@
-require('dotenv');
+const fs = require('fs');
+var config = require('dotenv').config();
+var config_example = "";
+if (fs.existsSync("./.env")) {
+  for (var attributename in config.parsed) {
+    config_example += attributename + "=\r\n";
+  }
+  fs.writeFileSync('./.env.example', config_example);
+}
 
 module.exports = {
   client: 'mysql',

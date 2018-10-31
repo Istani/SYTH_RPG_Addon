@@ -5,14 +5,8 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const Jimp = require('jimp');
 
-// TEST 
-/*
 const sponsors = require("./data_models/sponsors.js");
-var data_sponsors = {};
-sponsors.show(data_sponsors, () => { }, {});
-setTimeout(() => { console.log(data_sponsors) }, 10000);
-*/
-// TEST Ende
+const user = require("./data_models/chat_user.js");
 
 var monster={};
 function load_monster() {
@@ -43,16 +37,18 @@ client.on('message', msg => {
     if (monster.hp === undefined || monster.hp<1) {
       // No Monster Alive - Generate Monster
       console.log("Generate new Monster!");
-      monster.name="Dark "+msg.author.username;
-      monster.hp_max = 1;
-      monster.hp = monster.hp_max;
-      async.parallel([
-        function (callback) {get_image(msg.author.avatarURL, callback)},
+      var data_sponsors = {};
+      async.series([
+        function (callback) {sponsors.rand(data_sponsors, callback, {});},
+        function (callback) {get_image(data_sponsors.data.youtube_snippet_sponsordetails_profileimageurl,callback);}
       ], function (err) {
         if (err) {
             console.error("ERROR", err);
             return;
         }
+        monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
+        monster.hp_max = data_sponsors.data.simpleyth_monate*100;
+        monster.hp = monster.hp_max;
         save_monster();
         show_monster(msg);
       });
@@ -62,14 +58,28 @@ client.on('message', msg => {
   }
   if (msg.content === "Attack") {
     if (monster.hp >0) {
-      var tmp_dmg=1;
-      monster.hp-=tmp_dmg;
-      if (monster.hp<0) {
-        tmp_dmg+=monster_hp;
-        monster.hp=0;
-      }
-      save_monster();
-      msg.channel.send("⚔ " + msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
+      var search_user = {
+        service: "Discord",
+        host: msg.guild.id,
+        user: msg.author.id
+      };
+      var data_user ={};
+      async.series([
+        function (callback) {user.find(data_user, callback, search_user);},
+      ], function (err) {
+        if (err) {
+            console.error("ERROR", err);
+            return;
+        }
+        var tmp_dmg=5+data_user.data.msg_avg;
+        monster.hp-=tmp_dmg;
+        if (monster.hp<0) {
+          tmp_dmg+=monster_hp;
+          monster.hp=0;
+        }
+        save_monster();
+        msg.channel.send("⚔ " + msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
+      });
     } else {
       msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
     }
