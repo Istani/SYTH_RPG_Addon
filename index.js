@@ -59,7 +59,7 @@ function gen_char(msg, callback) {
   };
   var data_user ={};
   async.series([
-    function (callback) {user.find(data_user, callback, search_user);},
+    function (cb) {user.find(data_user, cb, search_user);},
   ], function (err) {
     var char_data = { //default daten
       dmg:5,
@@ -121,7 +121,7 @@ client.on('message', msg => {
   }
   if (msg.content === "Attack") {
     async.series([
-      function (callback) {gen_char(msg, callback);},
+      function (callback) {if (chars[msg.author.id]==undefined){gen_char(msg, callback);}else{callback();}},
     ], function (error) {
       if (chars[msg.author.id].hp==0) {
         msg.channel.send("X "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
@@ -129,7 +129,7 @@ client.on('message', msg => {
         var tmp_dmg=chars[msg.author.id].dmg;
         monster.hp-=tmp_dmg;
         if (monster.hp<0) {
-          tmp_dmg+=monster_hp;
+          tmp_dmg+=monster.hp;
           monster.hp=0;
         }
         if (monster.aggro[msg.author.id] == undefined) {
@@ -141,7 +141,7 @@ client.on('message', msg => {
         save_monster();
         msg.channel.send("⚔ **" + msg.author.username+"** hat "+tmp_dmg+" Schaden an **"+monster.name+"** gemacht!");
         if (monster.hp>0 && monster.attacks.length%5==0) {
-          msg.channel.send("mob attack");
+          monster_attack(msg);
         }
       } else {
         msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
@@ -177,6 +177,32 @@ function show_monster(msg) {
   //const attachment=new Attachment('./tmp/mob.jpg');
   //msg.channel.send(monster.name, attachment);
   msg.delete();
+}
+
+function monster_attack(msg) {
+  var most_aggro={user:0, value:0};
+  Object.keys(monster.aggro).forEach(function(key) {
+    var val = monster.aggro[key];
+    if (val>most_aggro.value) {
+      if (chars[key].hp>0) {
+        most_aggro.user=key;
+        most_aggro.value=val;
+      }
+    }
+  });
+  var tmp_dmg=monster.atk;
+  monster.atk=0;
+  chars[most_aggro.user].hp-=tmp_dmg;
+  if (chars[most_aggro.user].hp<0) {
+    tmp_dmg+=chars[most_aggro.user].hp;
+    chars[most_aggro.user].hp=0;
+  }
+  if (chars[most_aggro.user].hp==0) {
+    monster.aggro[most_aggro.user]=0;
+  }
+  msg.channel.send("⚔ **" + monster.name +"** hat "+tmp_dmg+" Schaden an **"+chars[most_aggro.user].name+"** gemacht!");
+  save_monster();
+  save_chars();
 }
 
 function get_image(img_path, callback) {

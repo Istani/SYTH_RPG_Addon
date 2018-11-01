@@ -36,8 +36,8 @@ MODEL.find = function (return_data, done_callback, send_data) {
       return_data.data = result[0];
       done_callback();
     }).catch((e) => {
-      console.error(table_name, "find 1", e.code);
-      done_callback(e);
+      console.error(table_name, "find 1", e);
+      //done_callback(e);
     });
   } catch (e) {
     console.error("find 2", e.code);
