@@ -78,8 +78,60 @@ function gen_char(msg, callback) {
     chars[char_data.id]=char_data;
     save_chars();
     callback();
+    load_inventory(char_data.id);
   });
 }
+var inventories={};
+function load_inventory(user_id) {
+  try {
+    inventories[user_id]=require("./tmp/inv_"+user_id+".json");
+    // Werte die später dazugekommen sind
+    if (inventories[user_id].max_items==undefiend) {
+      inventories[user_id].max_items=30;
+    }
+  } catch (err) {
+    inventories[user_id]={};
+    inventories[user_id].items=[];
+
+    inventories[user_id].max_items=30;
+
+    save_inventory(user_id);
+  }
+}
+function save_inventory(user_id) {
+  if (inventories[user_id]==undefined) {
+    load_inventory(user_id);
+  }
+  const fs = require("fs");
+  var data = JSON.stringify(inventories[user_id]);
+  fs.writeFileSync("./tmp/inv_"+user_id+".json",data);
+}
+var item_definition=require("./data/items.json");
+function get_iteminfo(name) {
+  return item_definition.find((e) => {return e.name==name;});
+}
+function add_item(user_id, item_name) {
+  var tmp_item = get_iteminfo(item_name);
+  if (tmp_item == undefined) {
+    return false;
+  }
+  if (inventories[user_id].items.length>=inventories[user_id].max_items) {
+    return false;
+  }
+  inventories[user_id].items.push(tmp_item);
+  save_inventory(user_id);
+  return true;
+}
+function remove_item(user_id, item_name) {
+  var tmp_item = inventories[user_id].items.find((e) => {return e.name==item_name;});
+  if (tmp_item == undefined) {
+    return false;
+  }
+  inventories[user_id],items.remove(tmp_item);
+  save_inventory(user_id);
+  return true;
+}
+
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -152,6 +204,15 @@ client.on('message', msg => {
       }
       msg.delete();
     });
+  }
+  if (msg.content === "Harvest") {
+    if (add_item(msg.author.id, "Heilkraut")) {
+      var tmp_item=get_iteminfo("Heilkraut");
+      msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
+    } else {
+     msg.channel.send("❌ "+msg.author+": Item konnte nicht aufgesammelt werde!"); 
+    }
+    msg.delete();
   }
 });
 
