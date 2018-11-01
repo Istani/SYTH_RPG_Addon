@@ -14,9 +14,8 @@ function load_monster() {
   try {
     monster=require("./tmp/mob.json");
   } catch(error) {
-    console.error("Monster", "Couldn't load Monster!");
+    console.error("Monster", "Couldn't load!");
     monster={};
-    //save_monster(); - Can't save empty monster
   }
 }
 load_monster();
@@ -25,6 +24,61 @@ function save_monster() {
   var data = JSON.stringify(monster);
   fs.writeFileSync("./tmp/mob.json",data);
   load_monster();
+}
+
+var chars={};
+function load_chars() {
+  try {
+    chars=require("./tmp/chars.json");
+  } catch(error) {
+    console.error("Chars", "Couldn't load!");
+    chars={};
+  }
+}
+load_chars();
+function save_chars() {
+  const fs = require("fs");
+  var data = JSON.stringify(chars);
+  fs.writeFileSync("./tmp/chars.json",data);
+  load_chars();
+}
+function clear_chars() {
+  const fs = require("fs");
+  try {
+    fs.unlinkSync('./tmp/chars.json');
+  } catch (err) {
+  // handle the error
+  }
+  load_chars();
+}
+function gen_char(msg, callback) {
+  var search_user = {
+    service: "Discord",
+    host: msg.guild.id,
+    user: msg.author.id
+  };
+  var data_user ={};
+  async.series([
+    function (callback) {user.find(data_user, callback, search_user);},
+  ], function (err) {
+    var char_data = { //default daten
+      dmg:5,
+      hp_max:100,
+      id: msg.author.id,
+      name: msg.author.username
+    }
+    if (err || data_user.data==undefined) {
+      // Den User gibt es nicht? - Wohl neu...
+      console.error("Gen Char", err);
+    } else {
+      char_data.dmg+=data_user.data.msg_avg;
+      char_data.hp_max+=data_user.data.msg_sum;
+    }
+    char_data.hp=char_data.hp_max;
+    chars[char_data.id]=char_data;
+    save_chars();
+    callback();
+  });
 }
 
 client.on('ready', () => {
@@ -38,6 +92,7 @@ client.on('message', msg => {
     if (monster.hp === undefined || monster.hp<1) {
       // No Monster Alive - Generate Monster
       console.log("Generate new Monster!");
+      clear_chars(); // Ein neuer Kampf beginnt
       var data_sponsors = {};
       async.series([
         function (callback) {sponsors.rand(data_sponsors, callback, {});},
@@ -50,41 +105,49 @@ client.on('message', msg => {
         monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
         monster.hp_max = data_sponsors.data.simpleyth_monate*100;
         monster.hp = monster.hp_max;
+        monster.attacks=[];
+        monster.aggro={};
+        monster.atk=0;
         save_monster();
         show_monster(msg);
       });
     } else {
-      show_monster(msg);
+      msg.channel.send("X "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+      msg.delete();
     }
   }
+  if (msg.content === "Mobinfo") {
+    show_monster(msg);
+  }
   if (msg.content === "Attack") {
-    if (monster.hp >0) {
-      var search_user = {
-        service: "Discord",
-        host: msg.guild.id,
-        user: msg.author.id
-      };
-      var data_user ={};
-      async.series([
-        function (callback) {user.find(data_user, callback, search_user);},
-      ], function (err) {
-        if (err) {
-            console.error("ERROR", err);
-            return;
-        }
-        var tmp_dmg=5+data_user.data.msg_avg;
+    async.series([
+      function (callback) {gen_char(msg, callback);},
+    ], function (error) {
+      if (chars[msg.author.id].hp==0) {
+        msg.channel.send("X "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
+      } else if (monster.hp >0) {
+        var tmp_dmg=chars[msg.author.id].dmg;
         monster.hp-=tmp_dmg;
         if (monster.hp<0) {
           tmp_dmg+=monster_hp;
           monster.hp=0;
         }
+        if (monster.aggro[msg.author.id] == undefined) {
+          monster.aggro[msg.author.id]=0;
+        }
+        monster.attacks.push({user: msg.author.id, dmg: tmp_dmg});
+        monster.aggro[msg.author.id]+=tmp_dmg;
+        monster.atk+=tmp_dmg;
         save_monster();
-        msg.channel.send("⚔ " + msg.author.username+" hat "+tmp_dmg+" Schaden gemacht!");
-      });
-    } else {
-      msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
-    }
-    msg.delete();
+        msg.channel.send("⚔ **" + msg.author.username+"** hat "+tmp_dmg+" Schaden an **"+monster.name+"** gemacht!");
+        if (monster.hp>0 && monster.attacks.length%5==0) {
+          msg.channel.send("mob attack");
+        }
+      } else {
+        msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
+      }
+      msg.delete();
+    });
   }
 });
 
