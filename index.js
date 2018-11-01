@@ -112,7 +112,7 @@ client.on('message', msg => {
         show_monster(msg);
       });
     } else {
-      msg.channel.send("X "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+      msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
       msg.delete();
     }
   }
@@ -128,7 +128,7 @@ client.on('message', msg => {
       function (callback) {if (chars[msg.author.id]==undefined){gen_char(msg, callback);}else{callback();}},
     ], function (error) {
       if (chars[msg.author.id].hp==0) {
-        msg.channel.send("X "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
+        msg.channel.send("💀 "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
       } else if (monster.hp >0) {
         var tmp_dmg=chars[msg.author.id].dmg;
         monster.hp-=tmp_dmg;
