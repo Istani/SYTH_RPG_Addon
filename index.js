@@ -119,6 +119,10 @@ client.on('message', msg => {
   if (msg.content === "Mobinfo") {
     show_monster(msg);
   }
+  if (msg.content === "Charinfo") {
+    show_char(msg, msg.author.id);
+    msg.delete();
+  }
   if (msg.content === "Attack") {
     async.series([
       function (callback) {if (chars[msg.author.id]==undefined){gen_char(msg, callback);}else{callback();}},
@@ -178,6 +182,27 @@ function show_monster(msg) {
   //msg.channel.send(monster.name, attachment);
   msg.delete();
 }
+function show_char(msg, userid) {
+  var hp_text = chars[userid].hp + "/" + chars[userid].hp_max;
+  var hp_details=""; //██░░░░░░░ 23%"
+  var hp_prozent=parseInt((chars[userid].hp*100)/chars[userid].hp_max);
+  var step_prozent=5;
+  var tmp_prozent=0;
+  while (tmp_prozent<100) {
+    tmp_prozent+=step_prozent;
+    if(tmp_prozent<=hp_prozent) {
+      hp_details+="█";
+    } else {
+      hp_details+="░";
+    }
+  }
+  hp_details+=" "+hp_prozent+"%";
+  const embed = new Discord.RichEmbed()
+    .setTitle(chars[userid].name)
+    .setDescription("")
+    .addField("❤ HP ("+hp_text+"):", hp_details, true);
+  msg.channel.send({ embed });
+}
 
 function monster_attack(msg) {
   var most_aggro={user:0, value:0};
@@ -201,6 +226,9 @@ function monster_attack(msg) {
     monster.aggro[most_aggro.user]=0;
   }
   msg.channel.send("⚔ **" + monster.name +"** hat "+tmp_dmg+" Schaden an **"+chars[most_aggro.user].name+"** gemacht!");
+
+  show_char(msg, most_aggro.user);
+
   save_monster();
   save_chars();
 }
