@@ -7,6 +7,7 @@ const Jimp = require('jimp');
 
 const sponsors = require("./data_models/sponsors.js");
 const user = require("./data_models/chat_user.js");
+const roles = require("./data_models/chat_user_roles.js");
 
 var monster={};
 function load_monster() {
