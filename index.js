@@ -9,6 +9,12 @@ const sponsors = require("./data_models/sponsors.js");
 const user = require("./data_models/chat_user.js");
 const roles = require("./data_models/chat_user_roles.js");
 
+const settings = { // später aus file/db
+  mvp_role: "RPG-MVP",
+  min_dmg: 5,
+  min_hp: 100
+}
+
 var monster={};
 function load_monster() {
   try {
@@ -62,8 +68,8 @@ function gen_char(msg, callback) {
     function (cb) {user.find(data_user, cb, search_user);},
   ], function (err) {
     var char_data = { //default daten
-      dmg:5,
-      hp_max:100,
+      dmg:settings.min_dmg,
+      hp_max:settings.min_hp,
       id: msg.author.id,
       name: msg.author.username
     }
@@ -159,7 +165,7 @@ client.on('message', msg => {
         monster.hp = monster.hp_max;
         monster.attacks=[];
         monster.aggro={};
-        monster.atk=0;
+        monster.atk=settings.min_dmg;
         save_monster();
         show_monster(msg);
       });
@@ -301,7 +307,7 @@ function monster_attack(msg) {
     }
   });
   var tmp_dmg=monster.atk;
-  monster.atk=0;
+  monster.atk=settings.min_dmg;
   chars[most_aggro.user].hp-=tmp_dmg;
   if (chars[most_aggro.user].hp<0) {
     tmp_dmg+=chars[most_aggro.user].hp;
