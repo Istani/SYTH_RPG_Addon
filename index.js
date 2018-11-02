@@ -123,11 +123,11 @@ function add_item(user_id, item_name) {
   return true;
 }
 function remove_item(user_id, item_name) {
-  var tmp_item = inventories[user_id].items.find((e) => {return e.name==item_name;});
+  var tmp_item = inventories[user_id].items.indexOf((e) => {return e.name==item_name;});
   if (tmp_item == undefined) {
     return false;
   }
-  inventories[user_id],items.remove(tmp_item);
+  inventories[user_id].items.slice(tmp_item,1);
   save_inventory(user_id);
   return true;
 }
@@ -211,6 +211,30 @@ client.on('message', msg => {
       msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
     } else {
      msg.channel.send("❌ "+msg.author+": Item konnte nicht aufgesammelt werde!"); 
+    }
+    msg.delete();
+  }
+  if (msg.content === "Heal") {
+    var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
+    if (healitem == undefined) {
+      msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
+    } else if (remove_item(msg.author.id,healitem.name)) {
+      var tmp_heal=healitem.heal;
+      chars[msg.author.id].hp+=tmp_heal;
+      if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
+        tmp_heal+=(chars[msg.author.id].hp_max-chars[msg.author.id].hp);
+        chars[msg.author.id].hp=chars[msg.author.id].hp_max;
+      }
+      msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
+      monster.attacks.push({user: msg.author.id, dmg: 0});
+      monster.aggro[msg.author.id]+=tmp_heal;
+      save_monster();
+      save_chars();
+      if (monster.hp>0 && monster.attacks.length%5==0) {
+        monster_attack(msg);
+      }
+    } else {
+      msg.channel.send("❌ "+msg.author+": Item konnte nicht eingesetzt werden!");
     }
     msg.delete();
   }
