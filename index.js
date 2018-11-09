@@ -13,7 +13,7 @@ const settings = { // später aus file/db
   mvp_role: "RPG-MVP",
   min_dmg: 5,
   min_hp: 100
-}
+};
 
 var monster={};
 function load_monster() {
@@ -141,7 +141,29 @@ function remove_item(user_id, item_name) {
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  check_server();
+  client.setInterval(check_server, 1000*60*60);
 });
+client.on('disconnect', () => {
+  process.exit(0);
+});
+client.on('guildCreate', () => {
+  check_server();
+});
+client.on('roleCreate', () => {
+  chechk_server();
+});
+function check_server() {
+  var guilds=client.guilds;
+  guilds.forEach((guild) => {
+    var roles=guild.roles;
+    roles.forEach((role) => {
+      if (role.name==settings.mvp_role) {
+        console.log("MVP", guild.name, role.name);
+      }
+    });
+  });
+}
 
 client.on('message', msg => {
   if (msg.content === 'Spawn') {
