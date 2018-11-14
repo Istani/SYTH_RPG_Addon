@@ -47,7 +47,7 @@ function save_mvp() {
   fs.writeFileSync("./tmp/mvp.json",data);
   load_mvp();
 }
-function add_mvp(username) {
+function add_mvp(username, guild) {
   if (mvp_list[username] == undefined) {
     mvp_list[username]={};
     mvp_list[username].first=moment();
@@ -56,10 +56,14 @@ function add_mvp(username) {
     mvp_list[username].first=moment();
   }
   mvp_list[username].last=moment();
+  if (guild) {
+    var role=guild.roles.find((role) => { return role.name == settings.mvp_role;});
+    var member=guild.members.find((member) => {return member.user.username==username;});
+    guild.member(member).addRole(role);
+  }
   save_mvp();
 }
 function check_mvp(member, guild, role) {
-  console.log(member.user.username);
   if (mvp_list[member.user.username]==undefined) {
     add_mvp(member.user.username);
     mvp_list[member.user.username].last=0;
@@ -288,6 +292,9 @@ client.on('message', msg => {
         if (monster.hp>0 && monster.attacks.length%5==0) {
           monster_attack(msg);
         }
+        if (monster.hp==0) {
+          calc_mvp(msg.channel);
+        }
       } else {
         msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
       }
@@ -417,4 +424,9 @@ function get_image(img_path, callback) {
   }).catch(err => {
     callback(err);
   });
+}
+
+function calc_mvp(channel) {
+  add_mvp("Istani0815",channel.guild);
+  channel.send("test");
 }
