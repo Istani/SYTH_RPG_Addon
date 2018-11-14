@@ -52,12 +52,27 @@ function add_mvp(username) {
     mvp_list[username]={};
     mvp_list[username].first=moment();
   }
+  if (mvp_list[username].first==0) {
+    mvp_list[username].first=moment();
+  }
   mvp_list[username].last=moment();
   save_mvp();
 }
 function check_mvp(member, guild, role) {
   console.log(member.user.username);
-  // TODO remove Role
+  if (mvp_list[member.user.username]==undefined) {
+    add_mvp(member.user.username);
+    mvp_list[member.user.username].last=0;
+    mvp_list[member.user.username].first=0;
+    save_mvp();
+  }
+  if (mvp_list[member.user.username].last<moment().subtract(30, 'days')) {
+    guild.member(member).removeRole(role);
+    console.log("MVP","Remove",member.user.username);
+    mvp_list[member.user.username].last=0;
+    mvp_list[member.user.username].first=0;
+    save_mvp();
+  }
 }
 
 var chars={};
