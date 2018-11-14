@@ -4,6 +4,8 @@ const { Attachment } = require('discord.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const Jimp = require('jimp');
+const fs = require('fs');
+const moment = require('moment');
 
 const sponsors = require("./data_models/sponsors.js");
 const user = require("./data_models/chat_user.js");
@@ -26,10 +28,36 @@ function load_monster() {
 }
 load_monster();
 function save_monster() {
-  const fs = require("fs");
   var data = JSON.stringify(monster);
   fs.writeFileSync("./tmp/mob.json",data);
   load_monster();
+}
+var mvp_list={};
+function load_mvp() {
+  try {
+    mvp_list=require("./tmp/mvp.json");
+  } catch (error) {
+    console.log("MVP","Couldn't load!");
+    mvp_list={};
+  }
+}
+load_mvp();
+function save_mvp() {
+  var data = JSON.stringify(mvp_list);
+  fs.writeFileSync("./tmp/mvp.json",data);
+  load_mvp();
+}
+function add_mvp(username) {
+  if (mvp_list[username] == undefined) {
+    mvp_list[username]={};
+    mvp_list[username].first=moment();
+  }
+  mvp_list[username].last=moment();
+  save_mvp();
+}
+function check_mvp(member, guild, role) {
+  console.log(member.user.username);
+  // TODO remove Role
 }
 
 var chars={};
@@ -43,13 +71,11 @@ function load_chars() {
 }
 load_chars();
 function save_chars() {
-  const fs = require("fs");
   var data = JSON.stringify(chars);
   fs.writeFileSync("./tmp/chars.json",data);
   load_chars();
 }
 function clear_chars() {
-  const fs = require("fs");
   try {
     fs.unlinkSync('./tmp/chars.json');
   } catch (err) {
@@ -108,7 +134,6 @@ function save_inventory(user_id) {
   if (inventories[user_id]==undefined) {
     load_inventory(user_id);
   }
-  const fs = require("fs");
   var data = JSON.stringify(inventories[user_id]);
   fs.writeFileSync("./tmp/inv_"+user_id+".json",data);
 }
@@ -138,7 +163,7 @@ function remove_item(user_id, item_name) {
   return true;
 }
 
-
+var valid_guilds=[];
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
   check_server();
@@ -151,7 +176,7 @@ client.on('guildCreate', () => {
   check_server();
 });
 client.on('roleCreate', () => {
-  chechk_server();
+  check_server();
 });
 function check_server() {
   var guilds=client.guilds;
@@ -159,54 +184,75 @@ function check_server() {
     var roles=guild.roles;
     roles.forEach((role) => {
       if (role.name==settings.mvp_role) {
-        console.log("MVP", guild.name, role.name);
+        var members = role.members;
+        members.forEach((member) => {
+          check_mvp(member, guild, role);
+        });
+        var already_valid=valid_guilds.find((e) => {return e==guild.id;});
+        if (already_valid) {
+          // already valid
+        } else {
+          console.log("Found Valid Guild", guild.name);
+          valid_guilds.push(guild.id);
+        }
       }
     });
   });
 }
 
 client.on('message', msg => {
-  if (msg.content === 'Spawn') {
-    // Check Role
-    // Check for Monster Already Spawned
-    if (monster.hp === undefined || monster.hp<1) {
-      // No Monster Alive - Generate Monster
-      console.log("Generate new Monster!");
-      clear_chars(); // Ein neuer Kampf beginnt
-      var data_sponsors = {};
-      async.series([
-        function (callback) {sponsors.rand(data_sponsors, callback, {});},
-        function (callback) {get_image(data_sponsors.data.youtube_snippet_sponsordetails_profileimageurl,callback);}
-      ], function (err) {
-        if (err) {
+  var check_msg_guild=valid_guilds.find((e) => {return e==msg.guild.id;})
+  if (!check_msg_guild) {
+    return;
+  }
+  async.series([
+    function (callback) {if (chars[msg.author.id]==undefined){gen_char(msg, callback);} else {callback();}},
+    function (callback) {if (inventories[msg.author.id]==undefined) {load_inventory(msg.author.id); callback();} else {callback();}},
+    function (callback) {callback();}
+  ], function (err) {
+    if (err) {
+      console.error("ERROR", err);
+      return;
+     }
+
+    if (msg.content === 'Spawn') {
+      // Check Role
+      // Check for Monster Already Spawned
+      if (monster.hp === undefined || monster.hp<1) {
+        // No Monster Alive - Generate Monster
+        console.log("Generate new Monster!");
+        clear_chars(); // Ein neuer Kampf beginnt
+        var data_sponsors = {};
+        async.series([
+          function (callback) {sponsors.rand(data_sponsors, callback, {});},
+          function (callback) {get_image(data_sponsors.data.youtube_snippet_sponsordetails_profileimageurl,callback);}
+        ], function (err) {
+          if (err) {
             console.error("ERROR", err);
             return;
-        }
-        monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
-        monster.hp_max = data_sponsors.data.simpleyth_monate*100;
-        monster.hp = monster.hp_max;
-        monster.attacks=[];
-        monster.aggro={};
-        monster.atk=settings.min_dmg;
-        save_monster();
-        show_monster(msg);
-      });
-    } else {
-      msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+          }
+          monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
+          monster.hp_max = data_sponsors.data.simpleyth_monate*100;
+          monster.hp = monster.hp_max;
+          monster.attacks=[];
+          monster.aggro={};
+          monster.atk=settings.min_dmg;
+          save_monster();
+          show_monster(msg);
+        });
+      } else {
+        msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+        msg.delete();
+      }
+    }
+    if (msg.content === "Mobinfo") {
+      show_monster(msg);
+    }
+    if (msg.content === "Charinfo") {
+      show_char(msg, msg.author.id);
       msg.delete();
     }
-  }
-  if (msg.content === "Mobinfo") {
-    show_monster(msg);
-  }
-  if (msg.content === "Charinfo") {
-    show_char(msg, msg.author.id);
-    msg.delete();
-  }
-  if (msg.content === "Attack") {
-    async.series([
-      function (callback) {if (chars[msg.author.id]==undefined){gen_char(msg, callback);}else{callback();}},
-    ], function (error) {
+    if (msg.content === "Attack") {
       if (chars[msg.author.id].hp==0) {
         msg.channel.send("💀 "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
       } else if (monster.hp >0) {
@@ -231,41 +277,41 @@ client.on('message', msg => {
         msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
       }
       msg.delete();
-    });
-  }
-  if (msg.content === "Harvest") {
-    if (add_item(msg.author.id, "Heilkraut")) {
-      var tmp_item=get_iteminfo("Heilkraut");
-      msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
-    } else {
-     msg.channel.send("❌ "+msg.author+": Item konnte nicht aufgesammelt werde!"); 
     }
-    msg.delete();
-  }
-  if (msg.content === "Heal") {
-    var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
-    if (healitem == undefined) {
-      msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
-    } else if (remove_item(msg.author.id,healitem.name)) {
-      var tmp_heal=healitem.heal;
-      chars[msg.author.id].hp+=tmp_heal;
-      if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
-        tmp_heal+=(chars[msg.author.id].hp_max-chars[msg.author.id].hp);
-        chars[msg.author.id].hp=chars[msg.author.id].hp_max;
+    if (msg.content === "Harvest") {
+      if (add_item(msg.author.id, "Heilkraut")) {
+        var tmp_item=get_iteminfo("Heilkraut");
+        msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
+      } else {
+       msg.channel.send("❌ "+msg.author+": Item konnte nicht aufgesammelt werde!"); 
       }
-      msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
-      monster.attacks.push({user: msg.author.id, dmg: 0});
-      monster.aggro[msg.author.id]+=tmp_heal;
-      save_monster();
-      save_chars();
-      if (monster.hp>0 && monster.attacks.length%5==0) {
-        monster_attack(msg);
-      }
-    } else {
-      msg.channel.send("❌ "+msg.author+": Item konnte nicht eingesetzt werden!");
+      msg.delete();
     }
-    msg.delete();
-  }
+    if (msg.content === "Heal") {
+      var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
+      if (healitem == undefined) {
+        msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
+      } else if (remove_item(msg.author.id,healitem.name)) {
+        var tmp_heal=healitem.heal;
+        chars[msg.author.id].hp+=tmp_heal;
+        if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
+          tmp_heal+=(chars[msg.author.id].hp_max-chars[msg.author.id].hp);
+          chars[msg.author.id].hp=chars[msg.author.id].hp_max;
+        }
+        msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
+        monster.attacks.push({user: msg.author.id, dmg: 0});
+        monster.aggro[msg.author.id]+=tmp_heal;
+        save_monster();
+        save_chars();
+        if (monster.hp>0 && monster.attacks.length%5==0) {
+          monster_attack(msg);
+        }
+      } else {
+        msg.channel.send("❌ "+msg.author+": Item konnte nicht eingesetzt werden!");
+      }
+      msg.delete();
+    }
+  });
 });
 
 client.login(process.env.DISCORD_TOKEN);
