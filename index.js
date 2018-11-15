@@ -159,7 +159,7 @@ function load_inventory(user_id) {
       inventories[user_id].max_items=30;
     }
   } catch (err) {
-    console.log(err);
+    //console.log(err);
     inventories[user_id]={};
     inventories[user_id].items=[];
     inventories[user_id].max_items=30;
