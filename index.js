@@ -14,8 +14,25 @@ const roles = require("./data_models/chat_user_roles.js");
 const settings = { // später aus file/db
   mvp_role: "RPG-MVP",
   min_dmg: 5,
-  min_hp: 100
+  min_hp: 100,
+  prefix: "?"
 };
+
+function show_helptext(msg) {
+  // Reminder: Auch Embeded Texte sind Zeichenbegrenzt!
+  const embed = new Discord.RichEmbed()
+    .setTitle("RPG-Help")
+    .setDescription("")
+    .addField(settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
+    .addField(settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
+    .addField(settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
+    .addField(settings.prefix+"heal", "Heilt deinen Charakter, falls du ein Heilitem besitzt!\r\n", false)
+    .addField(settings.prefix+"inventory", "Zeigt dein Inventar an!\r\n", false)
+    .addField(settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
+    .addField(settings.prefix+"charinfo", "Zeigt Informationen zu deinen Charakter an!\r\n", false)
+    .addField(settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
+  msg.channel.send(embed);
+}
 
 var monster={};
 function load_monster() {
@@ -47,7 +64,7 @@ function save_mvp() {
   fs.writeFileSync("./tmp/mvp.json",data);
   load_mvp();
 }
-function add_mvp(username, guild) {
+function add_mvp(username, channel) {
   if (mvp_list[username] == undefined) {
     mvp_list[username]={};
     mvp_list[username].first=moment();
@@ -56,10 +73,11 @@ function add_mvp(username, guild) {
     mvp_list[username].first=moment();
   }
   mvp_list[username].last=moment();
-  if (guild) {
-    var role=guild.roles.find((role) => { return role.name == settings.mvp_role;});
-    var member=guild.members.find((member) => {return member.user.username==username;});
-    guild.member(member).addRole(role);
+  if (channel) {
+    var role=channel.guild.roles.find((role) => { return role.name == settings.mvp_role;});
+    var member=channel.guild.members.find((member) => {return member.user.username==username;});
+    channel.guild.member(member).addRole(role);
+    channel.send("👑 **" + username + "** wurde zum MVP!");
   }
   save_mvp();
 }
@@ -137,15 +155,14 @@ function load_inventory(user_id) {
   try {
     inventories[user_id]=require("./tmp/inv_"+user_id+".json");
     // Werte die später dazugekommen sind
-    if (inventories[user_id].max_items==undefiend) {
+    if (inventories[user_id].max_items==undefined) {
       inventories[user_id].max_items=30;
     }
   } catch (err) {
+    console.log(err);
     inventories[user_id]={};
     inventories[user_id].items=[];
-
     inventories[user_id].max_items=30;
-
     save_inventory(user_id);
   }
 }
@@ -155,6 +172,23 @@ function save_inventory(user_id) {
   }
   var data = JSON.stringify(inventories[user_id]);
   fs.writeFileSync("./tmp/inv_"+user_id+".json",data);
+}
+function display_inventroy(msg) {
+  var user=msg.author.id;
+  var inv = inventories[user].items;
+  var inv_length=inv.length;
+  var output_text="";
+  for (var i=0;i<inv_length;i++) {
+    output_text+=inv[i].icon+" "+inv[i].name+"\r\n";
+  }
+  if (output_text=="") {
+    output_text="Keine Items vorhanden!";
+  }
+  var embed = new Discord.RichEmbed()
+    .setTitle(msg.author.username)
+    .setDescription("")
+    .addField("Inventory",output_text,true);
+  msg.channel.send(embed);
 }
 var item_definition=require("./data/items.json");
 function get_iteminfo(name) {
@@ -173,11 +207,11 @@ function add_item(user_id, item_name) {
   return true;
 }
 function remove_item(user_id, item_name) {
-  var tmp_item = inventories[user_id].items.indexOf((e) => {return e.name==item_name;});
+  var tmp_item = inventories[user_id].items.findIndex((e) => {return e.name==item_name;});
   if (tmp_item == undefined) {
     return false;
   }
-  inventories[user_id].items.slice(tmp_item,1);
+  inventories[user_id].items=inventories[user_id].items.slice(tmp_item,1);
   save_inventory(user_id);
   return true;
 }
@@ -233,8 +267,11 @@ client.on('message', msg => {
       console.error("ERROR", err);
       return;
      }
-
-    if (msg.content === 'Spawn') {
+    msg.content=msg.content.toLowerCase();
+    if (msg.content === settings.prefix) {
+      msg.content+="help";
+    }
+    if (msg.content === settings.prefix+'spawn') {
       // Check Role
       // Check for Monster Already Spawned
       if (monster.hp === undefined || monster.hp<1) {
@@ -260,20 +297,25 @@ client.on('message', msg => {
           show_monster(msg);
         });
       } else {
-        msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+        //msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
+        msg.content=settings.prefix+"help";
         msg.delete();
       }
     }
-    if (msg.content === "Mobinfo") {
+    if (msg.content === settings.prefix+"mobinfo") {
       show_monster(msg);
     }
-    if (msg.content === "Charinfo") {
+    if (msg.content === settings.prefix+"charinfo") {
       show_char(msg, msg.author.id);
       msg.delete();
     }
-    if (msg.content === "Attack") {
+    if (msg.content === settings.prefix+"inventory") {
+      display_inventroy(msg);
+      msg.delete();
+    }
+    if (msg.content === settings.prefix+"attack") {
       if (chars[msg.author.id].hp==0) {
-        msg.channel.send("💀 "+msg.author+": Ist Tot und kann nicht mehr angreifen!");
+        msg.channel.send("💀 "+msg.author+":Ist Tot und kann nicht mehr angreifen!");
       } else if (monster.hp >0) {
         var tmp_dmg=chars[msg.author.id].dmg;
         monster.hp-=tmp_dmg;
@@ -300,7 +342,7 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.content === "Harvest") {
+    if (msg.content === settings.prefix+"harvest") {
       if (add_item(msg.author.id, "Heilkraut")) {
         var tmp_item=get_iteminfo("Heilkraut");
         msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
@@ -309,11 +351,11 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.content === "Heal") {
+    if (msg.content === settings.prefix+"heal") {
       var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
       if (healitem == undefined) {
         msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
-      } else if (remove_item(msg.author.id,healitem.name)) {
+      } else if (remove_item(msg.author.id, healitem.name)) {
         var tmp_heal=healitem.heal;
         chars[msg.author.id].hp+=tmp_heal;
         if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
@@ -332,6 +374,9 @@ client.on('message', msg => {
         msg.channel.send("❌ "+msg.author+": Item konnte nicht eingesetzt werden!");
       }
       msg.delete();
+    }
+    if (msg.content === settings.prefix+"help") {
+      show_helptext(msg);
     }
   });
 });
@@ -427,6 +472,31 @@ function get_image(img_path, callback) {
 }
 
 function calc_mvp(channel) {
-  add_mvp("Istani0815",channel.guild);
-  channel.send("test");
+  monster.hp=1; // For Dev Test
+  var attack_sums={};
+  monster.attacks.forEach((attack) => {
+    if (attack_sums[attack.user]==undefined) {
+      attack_sums[attack.user]=0;
+    }
+    attack_sums[attack.user]+=attack.dmg;
+  });
+  var sortable = [];
+  for (var user in attack_sums) {
+    sortable.push([user, attack_sums[user]]);
+  }
+  sortable.sort((a, b) => {return b[1] - a[1];});
+  var embed = new Discord.RichEmbed()
+    .setTitle("Damage-Meter")
+    .setDescription("");
+  var max_length=sortable.length;
+  if (max_length>10) {
+    max_length=10;
+  }
+  var output_text="";
+  for (var i = 0;i<max_length;i++) {
+    output_text+=(i+1) + ". <@" + sortable[i][0] +">: " + sortable[i][1] + " \r\n";
+  }
+  embed.addField("Top 10",output_text,true);
+  channel.send({ embed });
+  add_mvp(channel.guild.members.get(sortable[0][0]).user.username,channel);
 }
