@@ -115,10 +115,11 @@ function save_chars() {
 function clear_chars() {
   try {
     fs.unlinkSync('./tmp/chars.json');
+    load_chars();
   } catch (err) {
-  // handle the error
+    console.error(err);
+    chars={};
   }
-  load_chars();
 }
 function gen_char(msg, callback) {
   var search_user = {
