@@ -22,7 +22,7 @@ function show_helptext(msg) {
   // Reminder: Auch Embeded Texte sind Zeichenbegrenzt!
   const embed = new Discord.RichEmbed()
     .setTitle("RPG-Help")
-    .setDescription("")
+    .setDescription("Fehler oder Wünsche:\r\nhttps://github.com/Istani/SYTH_RPG_Addon/issues\r\n")
     .addField(settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
     .addField(settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
     .addField(settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
