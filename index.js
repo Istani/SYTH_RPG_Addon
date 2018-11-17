@@ -472,7 +472,6 @@ function get_image(img_path, callback) {
 }
 
 function calc_mvp(channel) {
-  monster.hp=1; // For Dev Test
   var attack_sums={};
   monster.attacks.forEach((attack) => {
     if (attack_sums[attack.user]==undefined) {
