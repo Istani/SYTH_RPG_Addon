@@ -214,6 +214,9 @@ function remove_item(user_id, item_name) {
     return false;
   }
   inventories[user_id].items=inventories[user_id].items.slice(tmp_item,1);
+  if (inventories[user_id].items.length<1) {
+    inventories[user_id].items={};
+  }
   save_inventory(user_id);
   return true;
 }
