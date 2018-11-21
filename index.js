@@ -120,6 +120,7 @@ function clear_chars() {
     console.error(err);
     chars={};
   }
+  return true;
 }
 function gen_char(msg, callback) {
   var search_user = {
