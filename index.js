@@ -190,7 +190,7 @@ function display_inventroy(msg) {
     .setTitle(msg.author.username)
     .setDescription("")
     .addField("Inventory",output_text,true);
-  msg.channel.send(embed);
+  msg.author.send(embed);
 }
 var item_definition=require("./data/items.json");
 function get_iteminfo(name) {
