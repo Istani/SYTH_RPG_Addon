@@ -112,7 +112,7 @@ function save_chars() {
   fs.writeFileSync("./tmp/chars.json",data);
   load_chars();
 }
-function clear_chars() {
+function clear_chars(cb) {
   try {
     fs.unlinkSync('./tmp/chars.json');
     load_chars();
@@ -120,7 +120,7 @@ function clear_chars() {
     console.error(err);
     chars={};
   }
-  return true;
+  cb();
 }
 function gen_char(msg, callback) {
   var search_user = {
@@ -283,9 +283,9 @@ client.on('message', msg => {
       if (monster.hp === undefined || monster.hp<1) {
         // No Monster Alive - Generate Monster
         console.log("Generate new Monster!");
-        clear_chars(); // Ein neuer Kampf beginnt
         var data_sponsors = {};
         async.series([
+          function (callback) {clear_chars(callback);},
           function (callback) {sponsors.rand(data_sponsors, callback, {});},
           function (callback) {get_image(data_sponsors.data.youtube_snippet_sponsordetails_profileimageurl,callback);}
         ], function (err) {
