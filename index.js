@@ -369,7 +369,7 @@ client.on('message', msg => {
         }
         msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
         monster.attacks.push({user: msg.author.id, dmg: 0});
-        monster.aggro[msg.author.id]+=tmp_heal;
+        monster.aggro[msg.author.id]+=tmp_heal*0.25;
         save_monster();
         save_chars();
         if (monster.hp>0 && monster.attacks.length%5==0) {
