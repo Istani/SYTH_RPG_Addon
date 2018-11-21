@@ -247,7 +247,11 @@ function check_server() {
         members.forEach((member) => {
           check_mvp(member, guild, role);
         });
-        var already_valid=valid_guilds.find((e) => {return e==guild.id;});
+        if (valid_guilds.length==0) {
+          var already_valid=false;
+        } else {
+          var already_valid=valid_guilds.find((e) => {return e==guild.id;});
+        }
         if (already_valid) {
           // already valid
         } else {
@@ -260,6 +264,9 @@ function check_server() {
 }
 
 client.on('message', msg => {
+  if (valid_guilds.length==0) {
+    return;
+  }
   var check_msg_guild=valid_guilds.find((e) => {return e==msg.guild.id;})
   if (!check_msg_guild) {
     return;
