@@ -118,8 +118,8 @@ function clear_chars(cb) {
     load_chars();
   } catch (err) {
     console.error(err);
-    chars={};
   }
+  chars={};
   cb();
 }
 function gen_char(msg, callback) {
