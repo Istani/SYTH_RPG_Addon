@@ -395,7 +395,7 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.startsWith(settings.prefix+"heal")) {
+    if (msg.content.startsWith(settings.prefix+"heal")) {
       var heal_user=msg.author;
       if (message.mentions.users.first()) {
         heal_user=msg.mentions.users.first();
