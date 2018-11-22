@@ -292,7 +292,7 @@ client.on('message', msg => {
         console.log("Generate new Monster!");
         var data_sponsors = {};
         async.series([
-          function (callback) {clear_chars(callback);},
+          function (callback) {chars={};clear_chars(callback);},
           function (callback) {sponsors.rand(data_sponsors, callback, {});},
           function (callback) {get_image(data_sponsors.data.youtube_snippet_sponsordetails_profileimageurl,callback);}
         ], function (err) {
@@ -300,6 +300,7 @@ client.on('message', msg => {
             console.error("ERROR", err);
             return;
           }
+          gen_char(msg, ()=>{});
           monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
           monster.hp_max = data_sponsors.data.simpleyth_monate*100;
           monster.hp = monster.hp_max;
