@@ -15,7 +15,8 @@ const settings = { // später aus file/db
   mvp_role: "RPG-MVP",
   min_dmg: 5,
   min_hp: 100,
-  prefix: "?"
+  prefix: "?",
+  min_cooldown: 60
 };
 
 function show_helptext(msg) {
@@ -169,11 +170,12 @@ function check_cooldown(msg) {
     msg.channel.send("❌ "+msg.author+": Du musst dich ausruhen (" + cooldown_sekunden +" Sekunden)").then((message) => {
       message.delete((cooldown_sekunden+3)*1000);
     });
+    msg.delete();
   }
   return cooldown;
 }
-function add_cooldown(user_id, seconds) {
-  chars[user_id].timeout=moment().add(seconds, "seconds");
+function add_cooldown(msg, seconds) {
+  chars[msg.author.id].timeout=moment().add(seconds, "seconds");
   save_chars();
 }
 var inventories={};
@@ -352,9 +354,11 @@ client.on('message', msg => {
       msg.delete();
     }
     if (msg.content === settings.prefix+"attack") {
+      if (check_cooldown(msg)) {return;}
       if (chars[msg.author.id].hp==0) {
         msg.channel.send("💀 "+msg.author+":Ist Tot und kann nicht mehr angreifen!");
       } else if (monster.hp >0) {
+        add_cooldown(msg, settings.min_cooldown);
         var tmp_dmg=chars[msg.author.id].dmg;
         monster.hp-=tmp_dmg;
         if (monster.hp<0) {
@@ -381,8 +385,10 @@ client.on('message', msg => {
       msg.delete();
     }
     if (msg.content === settings.prefix+"harvest") {
+      if (check_cooldown(msg)) {return;}
       if (add_item(msg.author.id, "Heilkraut")) {
         var tmp_item=get_iteminfo("Heilkraut");
+        add_cooldown(msg, settings.min_cooldown*5);
         msg.channel.send("⛏ **"+msg.author.username+"** sammelt **"+tmp_item.icon+" "+tmp_item.name+"**!");
       } else {
        msg.channel.send("❌ "+msg.author+": Item konnte nicht aufgesammelt werde!"); 
@@ -390,11 +396,13 @@ client.on('message', msg => {
       msg.delete();
     }
     if (msg.content === settings.prefix+"heal") {
+      if (check_cooldown(msg)) {return;}
       var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
       if (healitem == undefined) {
         msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
       } else if (remove_item(msg.author.id, healitem.name)) {
         var tmp_heal=healitem.heal;
+        add_cooldown(msg, settings.min_cooldown);
         chars[msg.author.id].hp+=tmp_heal;
         if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
           tmp_heal+=(chars[msg.author.id].hp_max-chars[msg.author.id].hp);
