@@ -152,6 +152,30 @@ function gen_char(msg, callback) {
     load_inventory(char_data.id);
   });
 }
+function check_cooldown(msg) {
+  var cooldown=false;
+  var cooldown_sekunden=0;
+  var uid=msg.author.id;
+  if (chars[uid].timeout == undefined) {
+    chars[uid].timeout=moment();
+  }
+  if (chars[uid].timeout>moment()) {
+    var end_time=moment(chars[uid].timeout);
+    var start_time=monent();
+    cooldown=true;
+    cooldown_sekunden=end_time.diff(start_time, 'seconds', true);
+  }
+  if (cooldown) {
+    msg.channel.send("❌ "+msg.author+": Du musst dich ausruhen (" + cooldown_sekunden +" Sekunden)").then((message) => {
+      message.delete((cooldown_sekunden+3)*1000);
+    });
+  }
+  return cooldown;
+}
+function add_cooldown(user_id, seconds) {
+  chars[user_id].timeout=moment().add(seconds, "seconds");
+  save_chars();
+}
 var inventories={};
 function load_inventory(user_id) {
   try {
