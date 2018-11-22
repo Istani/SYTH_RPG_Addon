@@ -164,7 +164,7 @@ function check_cooldown(msg) {
     var end_time=moment(chars[uid].timeout);
     var start_time=moment();
     cooldown=true;
-    cooldown_sekunden=end_time.diff(start_time, 'seconds', true);
+    cooldown_sekunden=parseInt(end_time.diff(start_time, 'seconds', true));
   }
   if (cooldown) {
     msg.channel.send("❌ "+msg.author+": Du musst dich ausruhen (" + cooldown_sekunden +" Sekunden)").then((message) => {
