@@ -162,7 +162,7 @@ function check_cooldown(msg) {
   }
   if (chars[uid].timeout>moment()) {
     var end_time=moment(chars[uid].timeout);
-    var start_time=monent();
+    var start_time=moment();
     cooldown=true;
     cooldown_sekunden=end_time.diff(start_time, 'seconds', true);
   }
