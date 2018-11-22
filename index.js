@@ -27,7 +27,7 @@ function show_helptext(msg) {
     .addField(settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
     .addField(settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
     .addField(settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
-    .addField(settings.prefix+"heal", "Heilt deinen Charakter, falls du ein Heilitem besitzt!\r\n", false)
+    .addField(settings.prefix+"heal [User]", "Heilt deinen Charakter, falls du ein Heilitem besitzt!\r\n", false)
     .addField(settings.prefix+"inventory", "Zeigt dein Inventar an!\r\n", false)
     .addField(settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
     .addField(settings.prefix+"charinfo", "Zeigt Informationen zu deinen Charakter an!\r\n", false)
@@ -395,7 +395,11 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.content === settings.prefix+"heal") {
+    if (msg.startsWith(settings.prefix+"heal")) {
+      var heal_user=msg.author;
+      if (message.mentions.users.first()) {
+        heal_user=msg.mentions.users.first();
+      }
       if (check_cooldown(msg)) {return;}
       var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
       if (healitem == undefined) {
@@ -403,12 +407,16 @@ client.on('message', msg => {
       } else if (remove_item(msg.author.id, healitem.name)) {
         var tmp_heal=healitem.heal;
         add_cooldown(msg, settings.min_cooldown);
-        chars[msg.author.id].hp+=tmp_heal;
-        if (chars[msg.author.id].hp>chars[msg.author.id].hp_max) {
-          tmp_heal+=(chars[msg.author.id].hp_max-chars[msg.author.id].hp);
-          chars[msg.author.id].hp=chars[msg.author.id].hp_max;
+        chars[heal_user.id].hp+=tmp_heal;
+        if (chars[heal_user.id].hp>chars[heal_user.id].hp_max) {
+          tmp_heal+=(chars[heal_user.id].hp_max-chars[heal_user.id].hp);
+          chars[heal_user.id].hp=chars[heal_user.id].hp_max;
         }
-        msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
+        if (heal_user.id==msg.author.id) {
+          msg.channel.send("💊 **"+msg.author.username+"** heilt sich um "+tmp_heal+"!");
+        } else {
+          msg.channel.send("💊 **"+msg.author.username+"** heilt **" +heal_user.username+ "** um "+tmp_heal+"!");
+        }
         monster.attacks.push({user: msg.author.id, dmg: 0});
         monster.aggro[msg.author.id]+=tmp_heal*0.25;
         save_monster();
