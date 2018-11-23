@@ -19,6 +19,12 @@ const settings = { // später aus file/db
   min_cooldown: 60
 };
 
+// 💰 Gold
+// 🌈 Karma
+// ⚕ Best Healer?
+// 🛡 Best Tank?
+
+
 function show_helptext(msg) {
   // Reminder: Auch Embeded Texte sind Zeichenbegrenzt!
   const embed = new Discord.RichEmbed()
