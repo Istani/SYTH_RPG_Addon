@@ -23,15 +23,15 @@ function show_helptext(msg) {
   // Reminder: Auch Embeded Texte sind Zeichenbegrenzt!
   const embed = new Discord.RichEmbed()
     .setTitle("RPG-Help")
-    .setDescription("Fehler oder Wünsche:\r\nhttps://github.com/Istani/SYTH_RPG_Addon/issues\r\n")
-    .addField(settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
-    .addField(settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
-    .addField(settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
-    .addField(settings.prefix+"heal [User]", "Heilt deinen Charakter, falls du ein Heilitem besitzt!\r\n", false)
-    .addField(settings.prefix+"inventory", "Zeigt dein Inventar an!\r\n", false)
-    .addField(settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
-    .addField(settings.prefix+"charinfo", "Zeigt Informationen zu deinen Charakter an!\r\n", false)
-    .addField(settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
+    .setDescription("Fehler oder Wünsche:\r\nhttps://github.com/Istani/SYTH_RPG_Addon/issues \r\n\r\n")
+    .addField("\r\n" + settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
+    .addField("\r\n" + settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
+    .addField("\r\n" + settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
+    .addField("\r\n" + settings.prefix+"heal [Spieler]", "Heilt einen Charakter, falls du ein Heilitem besitzt!\r\nWenn du keinen anderen Spieler benennst, heilst du dich selbst!\r\n", false)
+    .addField("\r\n" + settings.prefix+"inventory", "Zeigt dein Inventar an!\r\n", false)
+    .addField("\r\n" + settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
+    .addField("\r\n" + settings.prefix+"charinfo", "Zeigt Informationen zu deinen Charakter an!\r\n", false)
+    .addField("\r\n" + settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
   msg.channel.send(embed);
 }
 
@@ -50,6 +50,7 @@ function save_monster() {
   fs.writeFileSync("./tmp/mob.json",data);
   load_monster();
 }
+
 var mvp_list={};
 function load_mvp() {
   try {
@@ -167,7 +168,7 @@ function check_cooldown(msg) {
     cooldown_sekunden=parseInt(end_time.diff(start_time, 'seconds', true));
   }
   if (cooldown) {
-    msg.channel.send("❌ "+msg.author+": Du musst dich ausruhen (" + cooldown_sekunden +" Sekunden)").then((message) => {
+    msg.channel.send("❌ "+msg.author+": Du musst dich ausruhen! (Noch " + cooldown_sekunden +" Sekunden)").then((message) => {
       message.delete((cooldown_sekunden+3)*1000);
     });
     msg.delete();
@@ -175,9 +176,11 @@ function check_cooldown(msg) {
   return cooldown;
 }
 function add_cooldown(msg, seconds) {
+  seconds = parseInt(seconds);
   chars[msg.author.id].timeout=moment().add(seconds, "seconds");
   save_chars();
 }
+
 var inventories={};
 function load_inventory(user_id) {
   try {
@@ -218,6 +221,7 @@ function display_inventroy(msg) {
     .addField("Inventory",output_text,true);
   msg.author.send(embed);
 }
+
 var item_definition=require("./data/items.json");
 function get_iteminfo(name) {
   return item_definition.find((e) => {return e.name==name;});
@@ -290,7 +294,8 @@ function check_server() {
 }
 
 client.on('message', msg => {
-  if (valid_guilds.length==0) {
+  if (valid_guilds.length == 0) {
+    check_server();
     return;
   }
   var check_msg_guild=valid_guilds.find((e) => {return e==msg.guild.id;})
@@ -310,7 +315,9 @@ client.on('message', msg => {
     if (msg.content === settings.prefix) {
       msg.content+="help";
     }
-    if (msg.content === settings.prefix+'spawn') {
+
+    // Spawn
+    if (msg.content.startsWith(settings.prefix+'spawn')) {
       // Check Role
       // Check for Monster Already Spawned
       if (monster.hp === undefined || monster.hp<1) {
@@ -337,23 +344,30 @@ client.on('message', msg => {
           show_monster(msg);
         });
       } else {
-        //msg.channel.send("❌ "+msg.author+": Göttlich Kraft verweigert, es existiert bereits ein Kampf!");
         msg.content=settings.prefix+"help";
         msg.delete();
       }
     }
-    if (msg.content === settings.prefix+"mobinfo") {
+
+    // Mob Info
+    if (msg.content.startsWith(settings.prefix+"mobinfo")) {
       show_monster(msg);
     }
-    if (msg.content === settings.prefix+"charinfo") {
+
+    // Char Info
+    if (msg.content.startsWith(settings.prefix+"charinfo")) {
       show_char(msg, msg.author.id);
       msg.delete();
     }
-    if (msg.content === settings.prefix+"inventory") {
+
+    // Inventory
+    if (msg.content.startsWith(settings.prefix+"inventory")) {
       display_inventroy(msg);
       msg.delete();
     }
-    if (msg.content === settings.prefix+"attack") {
+
+    // Attack
+    if (msg.content.startsWith(settings.prefix+"attack")) {
       if (check_cooldown(msg)) {return;}
       if (chars[msg.author.id].hp==0) {
         msg.channel.send("💀 "+msg.author+":Ist Tot und kann nicht mehr angreifen!");
@@ -384,7 +398,9 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.content === settings.prefix+"harvest") {
+
+    // Harvest
+    if (msg.content.startsWith(settings.prefix+"harvest")) {
       if (check_cooldown(msg)) {return;}
       if (add_item(msg.author.id, "Heilkraut")) {
         var tmp_item=get_iteminfo("Heilkraut");
@@ -395,6 +411,8 @@ client.on('message', msg => {
       }
       msg.delete();
     }
+
+    // Heal
     if (msg.content.startsWith(settings.prefix+"heal")) {
       var heal_user=msg.author;
       if (msg.mentions.users.first()) {
@@ -429,7 +447,9 @@ client.on('message', msg => {
       }
       msg.delete();
     }
-    if (msg.content === settings.prefix+"help") {
+
+    // Help
+    if (msg.content.startsWith(settings.prefix+"help")) {
       show_helptext(msg);
     }
   });
