@@ -27,10 +27,10 @@ function show_helptext(msg) {
     .addField("\r\n" + settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
     .addField("\r\n" + settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
     .addField("\r\n" + settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
-    .addField("\r\n" + settings.prefix+"heal [Spieler]", "Heilt einen Charakter, falls du ein Heilitem besitzt!\r\nWenn du keinen anderen Spieler benennst, heilst du dich selbst!\r\n", false)
-    .addField("\r\n" + settings.prefix+"inventory", "Zeigt dein Inventar an!\r\n", false)
+    .addField("\r\n" + settings.prefix+"heal [player]", "Heilt einen Charakter, falls du ein Heilitem besitzt!\r\nWenn du keinen anderen Spieler benennst, heilst du dich selbst!\r\n", false)
+    .addField("\r\n" + settings.prefix+"inventory", "Zeigt dir dein Inventar an!\r\n", false)
     .addField("\r\n" + settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
-    .addField("\r\n" + settings.prefix+"charinfo", "Zeigt Informationen zu deinen Charakter an!\r\n", false)
+    .addField("\r\n" + settings.prefix+"charinfo", "Zeigt Informationen zu deinem Charakter an!\r\n", false)
     .addField("\r\n" + settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
   msg.channel.send(embed);
 }
@@ -333,7 +333,8 @@ client.on('message', msg => {
             console.error("ERROR", err);
             return;
           }
-          gen_char(msg, ()=>{});
+          gen_char(msg, () => { });
+          save_chars();
           monster.name="Dark "+data_sponsors.data.youtube_snippet_sponsordetails_displayname;
           monster.hp_max = data_sponsors.data.simpleyth_monate*100;
           monster.hp = monster.hp_max;
@@ -413,12 +414,12 @@ client.on('message', msg => {
     }
 
     // Heal
-    if (msg.content.startsWith(settings.prefix+"heal")) {
+    if (msg.content.startsWith(settings.prefix + "heal")) {
+      if (check_cooldown(msg)) {return;}
       var heal_user=msg.author;
       if (msg.mentions.users.first()) {
         heal_user=msg.mentions.users.first();
       }
-      if (check_cooldown(msg)) {return;}
       var healitem=inventories[msg.author.id].items.find((e) => {return e.heal>0;});
       if (healitem == undefined) {
         msg.channel.send("❌ "+msg.author+": Kein Heilungsitem gefunden!");
