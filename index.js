@@ -449,6 +449,13 @@ client.on('message', msg => {
       msg.delete();
     }
 
+    // Taunt
+    if (msg.content.startsWith(settings.prefix + "taunt")) {
+      if (check_cooldown(msg)) {return;}
+      // Comming Soon!
+      msg.delete();
+    }
+
     // Help
     if (msg.content.startsWith(settings.prefix+"help")) {
       show_helptext(msg);
