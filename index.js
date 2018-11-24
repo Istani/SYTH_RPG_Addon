@@ -16,7 +16,7 @@ const settings = { // später aus file/db
   min_dmg: 5,
   min_hp: 100,
   prefix: "?",
-  min_cooldown: 60
+  min_cooldown: 30
 };
 
 // 💰 Gold
@@ -394,7 +394,7 @@ client.on('message', msg => {
         if (monster.aggro[msg.author.id] == undefined) {
           monster.aggro[msg.author.id]=0;
         }
-        monster.attacks.push({user: msg.author.id, dmg: tmp_dmg});
+        monster.attacks.push({user: msg.add_cooldown(msg, settings.min_cooldown);author.id, dmg: tmp_dmg});
         monster.aggro[msg.author.id]+=tmp_dmg;
         monster.atk+=tmp_dmg;
         save_monster();
@@ -447,6 +447,9 @@ client.on('message', msg => {
         } else {
           msg.channel.send("💊 **"+msg.author.username+"** heilt **" +heal_user.username+ "** um "+tmp_heal+"!");
         }
+        if (monster.aggro[msg.author.id] == undefined) {
+          monster.aggro[msg.author.id]=0;
+        }
         monster.attacks.push({user: msg.author.id, dmg: 0});
         monster.aggro[msg.author.id]+=tmp_heal*0.25;
         save_monster();
@@ -463,7 +466,19 @@ client.on('message', msg => {
     // Taunt
     if (msg.content.startsWith(settings.prefix + "taunt")) {
       if (check_cooldown(msg)) {return;}
-      // Comming Soon!
+      if (chars[msg.author.id].hp==0) {
+        msg.channel.send("💀 "+msg.author+":Ist Tot und kann nicht mehr verspotten!");
+      } else if (monster.hp>0) {
+        add_cooldown(msg, settings.min_cooldown/2);
+        if (monster.aggro[msg.author.id] == undefined) {
+          monster.aggro[msg.author.id]=0;
+        }
+        monster.aggro+=chars[msg.author.id].dmg;
+        monster.attacks.push({user: msg.author.id, dmg: 0});
+        msg.channel.send("x **" +msg.author.username +"** verspottet **"+monster.name+"**!");
+      } else {
+        msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
+      }
       msg.delete();
     }
 
