@@ -394,7 +394,7 @@ client.on('message', msg => {
         if (monster.aggro[msg.author.id] == undefined) {
           monster.aggro[msg.author.id]=0;
         }
-        monster.attacks.push({user: msg.add_cooldown(msg, settings.min_cooldown);author.id, dmg: tmp_dmg});
+        monster.attacks.push({user: msg.author.id, dmg: tmp_dmg});
         monster.aggro[msg.author.id]+=tmp_dmg;
         monster.atk+=tmp_dmg;
         save_monster();
