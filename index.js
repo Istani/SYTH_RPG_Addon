@@ -30,14 +30,15 @@ function show_helptext(msg) {
   const embed = new Discord.RichEmbed()
     .setTitle("RPG-Help")
     .setDescription("Fehler oder Wünsche:\r\nhttps://github.com/Istani/SYTH_RPG_Addon/issues \r\n\r\n")
-    .addField("\r\n" + settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
-    .addField("\r\n" + settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
-    .addField("\r\n" + settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
-    .addField("\r\n" + settings.prefix+"heal [player]", "Heilt einen Charakter, falls du ein Heilitem besitzt!\r\nWenn du keinen anderen Spieler benennst, heilst du dich selbst!\r\n", false)
-    .addField("\r\n" + settings.prefix+"inventory", "Zeigt dir dein Inventar an!\r\n", false)
-    .addField("\r\n" + settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
-    .addField("\r\n" + settings.prefix+"charinfo", "Zeigt Informationen zu deinem Charakter an!\r\n", false)
-    .addField("\r\n" + settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
+    .addField(settings.prefix+"help", "Zeigt diesen Text an!\r\n", false)
+    .addField(settings.prefix+"spawn", "Beschwört ein neues Monster, falls keins vorhanden ist!\r\n", false)
+    .addField(settings.prefix+"attack", "Lässt deinen Charakter angreifen!\r\n", false)
+    .addField(settings.prefix+"taunt", "Verspottet das Monster!\r\n",false)
+    .addField(settings.prefix+"heal [player]", "Heilt einen Charakter, falls du ein Heilitem besitzt!\r\nWenn du keinen anderen Spieler benennst, heilst du dich selbst!\r\n", false)
+    .addField(settings.prefix+"inventory", "Zeigt dir dein Inventar an!\r\n", false)
+    .addField(settings.prefix+"harvest", "Lässt deinen Charakter Kräuter sammeln!\r\n", false)
+    .addField(settings.prefix+"charinfo [player]", "Zeigt Informationen zu einen Charakter an!\r\n", false)
+    .addField(settings.prefix+"mobinfo", "Zeigt Informationen zu dem Monster an!\r\n", false);
   msg.channel.send(embed);
 }
 
@@ -363,6 +364,10 @@ client.on('message', msg => {
 
     // Char Info
     if (msg.content.startsWith(settings.prefix+"charinfo")) {
+      var show_id=msg.author.id;
+      if (msg.mentions.users.first()) {
+        show_id=msg.mentions.users.first().id;
+      }
       show_char(msg, msg.author.id);
       msg.delete();
     }
@@ -497,6 +502,7 @@ function show_monster(msg) {
   msg.delete();
 }
 function show_char(msg, userid) {
+  // 👑
   var hp_text = chars[userid].hp + "/" + chars[userid].hp_max;
   var hp_details=""; //██░░░░░░░ 23%"
   var hp_prozent=parseInt((chars[userid].hp*100)/chars[userid].hp_max);
