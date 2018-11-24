@@ -475,7 +475,7 @@ client.on('message', msg => {
         }
         monster.aggro+=chars[msg.author.id].dmg;
         monster.attacks.push({user: msg.author.id, dmg: 0});
-        msg.channel.send("x **" +msg.author.username +"** verspottet **"+monster.name+"**!");
+        msg.channel.send("🖕 **" +msg.author.username +"** verspottet **"+monster.name+"**!");
       } else {
         msg.channel.send("🔍 " + msg.author + ": Kein Monster in Sicht!");
       }
