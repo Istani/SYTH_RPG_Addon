@@ -451,7 +451,7 @@ client.on('message', msg => {
           monster.aggro[msg.author.id]=0;
         }
         monster.attacks.push({user: msg.author.id, dmg: 0});
-        monster.waggro[msg.author.id]+=tmp_heal*0.25;
+        monster.aggro[msg.author.id]+=tmp_heal*0.25;
         save_monster();
         save_chars();
         if (monster.hp>0 && monster.attacks.length%5==0) {
