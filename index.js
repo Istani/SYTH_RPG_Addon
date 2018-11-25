@@ -451,7 +451,7 @@ client.on('message', msg => {
           monster.aggro[msg.author.id]=0;
         }
         monster.attacks.push({user: msg.author.id, dmg: 0});
-        monster.aggro[msg.author.id]+=tmp_heal*0.25;
+        monster.waggro[msg.author.id]+=tmp_heal*0.25;
         save_monster();
         save_chars();
         if (monster.hp>0 && monster.attacks.length%5==0) {
@@ -473,7 +473,7 @@ client.on('message', msg => {
         if (monster.aggro[msg.author.id] == undefined) {
           monster.aggro[msg.author.id]=0;
         }
-        monster.aggro+=chars[msg.author.id].dmg;
+        monster.aggro[msg.author.id]+=chars[msg.author.id].dmg;
         monster.attacks.push({user: msg.author.id, dmg: 0});
         msg.channel.send("🖕 **" +msg.author.username +"** verspottet **"+monster.name+"**!");
       } else {
